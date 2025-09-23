@@ -21,17 +21,17 @@
         <div class="products-grid">
             <div class="product-card">
                 <img src="{{ asset('imagenes/camisa totoro.jpeg') }}" alt="Producto 1">
-                <h3>Zapatillas Air Zoom</h3>
+                <h3>Camisa Totoro</h3>
                 <p>$120.00</p>
             </div>
             <div class="product-card">
                 <img src="{{ asset('imagenes/spider.jpg') }}" alt="Producto 2">
-                <h3>Sudadera Classic</h3>
+                <h3>Camisa Spyder Woman</h3>
                 <p>$85.00</p>
             </div>
             <div class="product-card">
                 <img src="{{ asset('imagenes/vegetta.jpeg') }}" alt="Producto 3">
-                <h3>Leggings Pro</h3>
+                <h3>Camisa Vegetta</h3>
                 <p>$60.00</p>
             </div>
         </div>
