@@ -138,7 +138,7 @@
 
   {{-- Footer --}}
   <footer>
-    <img src="{{ asset('imagenes/Blaz!ng Store logo B Negra.svg') }}" alt="Logo" height="50" class="mb-2" />
+    <img src="{{ asset('imagenes/Fondo_new__Blazing.-Mesa-de-trabajo-1-01.png') }}" alt="Logo" height="50" class="mb-2" />
     <p class="mb-0">Somos un E-commerce de venta de ropa personalizada.</p>
     <small class="text-muted">&copy; 2025 Blazing Store. Todos los derechos reservados.</small>
   </footer>

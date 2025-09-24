@@ -175,18 +175,6 @@
             </div>
 
             <div class="form-group">
-              <label for="id_rol">Roles</label>
-              <select name="id_rol" id="id_rol" class="form-control">
-                <option value="">Selecciona un rol</option>
-                @foreach($roles as $rol)
-                  <option value="{{ $rol->id_rol }}" {{ old('id_rol') == $rol->id_rol ? 'selected' : '' }}>
-                    {{ $rol->nombre }}
-                  </option>
-                @endforeach
-              </select>
-            </div>
-
-            <div class="form-group">
               <label for="password_usu">Contraseña</label>
               <input type="password" name="contrasena" class="form-control" id="password_usu" placeholder="Contraseña">
             </div>
