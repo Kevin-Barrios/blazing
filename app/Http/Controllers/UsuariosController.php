@@ -2,18 +2,20 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Usuario;
+use App\Models\Rol;
 use Illuminate\Http\Request;
-use App\Models\User;
+use Illuminate\Support\Facades\Hash;
 
-class UsuariosController extends Controller
+class UsuarioController extends Controller
 {
     /**
      * Mostrar lista de usuarios
      */
     public function index()
     {
-        $usuarios = User::all();
-        return view('admin.listausuarios', compact('usuarios'));
+        $usuarios = Usuario::with('rol')->get();
+        return view('usuarios.listausuarios', compact('usuarios'));
     }
 
     /**
@@ -21,7 +23,8 @@ class UsuariosController extends Controller
      */
     public function create()
     {
-        return view('admin.crearusuario');
+        $roles = Rol::all();
+        return view('usuarios.crearusuario', compact('roles'));
     }
 
     /**
@@ -30,58 +33,67 @@ class UsuariosController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'name'     => 'required|string|max:255',
-            'email'    => 'required|email|unique:users,email',
-            'password' => 'required|string|min:6',
+            'nombre' => 'required|string|max:100',
+            'correo' => 'required|email|unique:usuarios,correo',
+            'password_usu' => 'required|min:6|confirmed',
+            'id_rol' => 'required|exists:rol,id_rol',
         ]);
 
-        User::create([
-            'name'     => $request->name,
-            'email'    => $request->email,
-            'password' => bcrypt($request->password),
+        Usuario::create([
+            'nombre' => $request->nombre,
+            'correo' => $request->correo,
+            'password_usu' => Hash::make($request->password_usu),
+            'id_rol' => $request->id_rol,
         ]);
 
-        return redirect()->back()->with('success', 'Usuario creado correctamente.');
+        return redirect()->route('usuarios.index')->with('success', 'Usuario creado correctamente.');
     }
 
     /**
      * Mostrar formulario de edición
      */
-    public function edit($id)
+    public function edit($id_usuario)
     {
-        $usuario = User::findOrFail($id);
-        return view('admin.editarusuario', compact('usuario'));
+        $usuario = Usuario::findOrFail($id_usuario);
+        $roles = Rol::all();
+        return view('usuarios.editarusuario', compact('usuario', 'roles'));
     }
 
     /**
      * Actualizar usuario
      */
-    public function update(Request $request, $id)
+    public function update(Request $request, $id_usuario)
     {
-        $usuario = User::findOrFail($id);
+        $usuario = Usuario::findOrFail($id_usuario);
 
         $request->validate([
-            'name'  => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email,' . $usuario->id,
+            'nombre' => 'required|string|max:100',
+            'correo' => 'required|email|unique:usuarios,correo,' . $usuario->id_usuario . ',id_usuario',
+            'id_rol' => 'required|exists:rol,id_rol',
+            'password_usu' => 'nullable|min:6|confirmed',
         ]);
 
-        $usuario->update([
-            'name'     => $request->name,
-            'email'    => $request->email,
-            'password' => $request->password ? bcrypt($request->password) : $usuario->password,
-        ]);
+        $usuario->nombre = $request->nombre;
+        $usuario->correo = $request->correo;
+        $usuario->id_rol = $request->id_rol;
 
-        return redirect()->back()->with('success', 'Usuario actualizado correctamente.');
+        if ($request->filled('password_usu')) {
+            $usuario->password_usu = Hash::make($request->password_usu);
+        }
+
+        $usuario->save();
+
+        return redirect()->route('usuarios.index')->with('success', 'Usuario actualizado correctamente.');
     }
 
     /**
      * Eliminar usuario
      */
-    public function destroy($id)
+    public function destroy($id_usuario)
     {
-        $usuario = User::findOrFail($id);
+        $usuario = Usuario::findOrFail($id_usuario);
         $usuario->delete();
 
-        return redirect()->back()->with('success', 'Usuario eliminado correctamente.');
+        return redirect()->route('usuarios.index')->with('success', 'Usuario eliminado correctamente.');
     }
 }

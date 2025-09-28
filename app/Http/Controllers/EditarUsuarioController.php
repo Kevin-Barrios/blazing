@@ -21,14 +21,14 @@ class EditarUsuarioController extends Controller
 
         $request->validate([
             'nombre' => 'required|string|max:255',
-            'correo' => 'required|email|max:255|unique:usuarios,correo,' . $usuario->id,
+            'correo' => 'required|email|max:255|unique:usuarios,correo,' . $usuario->id_usuario . ',id_usuario',
             'password_usu' => 'nullable|string|min:6|confirmed',
         ]);
 
         $usuario->nombre = $request->nombre;
         $usuario->correo = $request->correo;
 
-        if ($request->password_usu) {
+        if ($request->filled('password_usu')) {
             $usuario->password_usu = Hash::make($request->password_usu);
         }
 
@@ -37,3 +37,4 @@ class EditarUsuarioController extends Controller
         return redirect()->route('usuario.perfil')->with('success', 'Perfil actualizado correctamente.');
     }
 }
+
