@@ -182,53 +182,53 @@
       <div class="card card-custom">
         <h3 class="text-center mb-4">Historial de Compras</h3>
 
-        @forelse ($ventas as $venta)
+        @forelse ($compras as $compra)
         <div class="card mb-4 shadow-sm">
-          <div class="card-header d-flex justify-content-between custom-orange">
-            <div>
-              <strong>Venta #{{ $venta->id_venta }}</strong><br>
-              <small>Fecha: {{ \Carbon\Carbon::parse($venta->fecha_venta)->format('d/m/Y H:i') }}</small>
-            </div>
-            <div class="text-end">
-              <strong>Usuario:</strong> {{ $venta->usuario->nombre ?? 'Desconocido' }}
-            </div>
-          </div>
-
-          <div class="card-body">
-            <div class="table-responsive">
-              <table class="table table-hover table-bordered align-middle mb-0">
-                <thead class="custom-orange">
-                  <tr>
-                    <th>Producto</th>
-                    <th class="text-center">Cantidad</th>
-                    <th class="text-end">Precio Unitario</th>
-                    <th class="text-end">Subtotal</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  @foreach ($venta->detalles as $detalle)
-                    <tr>
-                      <td>{{ $detalle->producto->nombre ?? 'Producto Eliminado' }}</td>
-                      <td class="text-center">{{ $detalle->cantidad }}</td>
-                      <td class="text-end">${{ number_format($detalle->precio_unitario, 2) }}</td>
-                      <td class="text-end fw-bold">${{ number_format($detalle->subtotal, 2) }}</td>
-                    </tr>
-                  @endforeach
-                </tbody>
-              </table>
+            <div class="card-header d-flex justify-content-between custom-orange">
+                <div>
+                    <strong>Compra #{{ $compra->id_compra }}</strong><br>
+                    <small>Fecha: {{ \Carbon\Carbon::parse($compra->fecha_compra)->format('d/m/Y H:i') }}</small>
+                </div>
+                <div class="text-end">
+                    <strong>Usuario:</strong> {{ $compra->usuario->nombre ?? 'Desconocido' }}
+                </div>
             </div>
 
-            <div class="text-end mt-3">
-              <p class="mb-0"><strong>IVA:</strong> ${{ number_format($venta->iva_total, 2) }}</p>
-              <p class="fs-5"><strong>Total:</strong> ${{ number_format($venta->total, 2) }}</p>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover table-bordered align-middle mb-0">
+                        <thead class="custom-orange">
+                            <tr>
+                                <th>Producto</th>
+                                <th class="text-center">Cantidad</th>
+                                <th class="text-end">Precio Unitario</th>
+                                <th class="text-end">Subtotal</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach ($compra->detalles as $detalle)
+                                <tr>
+                                    <td>{{ $detalle->producto->nombre ?? 'Producto Eliminado' }}</td>
+                                    <td class="text-center">{{ $detalle->cantidad }}</td>
+                                    <td class="text-end">${{ number_format($detalle->precio_unitario, 2) }}</td>
+                                    <td class="text-end fw-bold">${{ number_format($detalle->subtotal, 2) }}</td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="text-end mt-3">
+                    <p class="mb-0"><strong>IVA:</strong> ${{ number_format($compra->iva_total, 2) }}</p>
+                    <p class="fs-5"><strong>Total:</strong> ${{ number_format($compra->total, 2) }}</p>
+                </div>
             </div>
-          </div>
         </div>
-      @empty
+    @empty
         <div class="alert alert-info text-center">
-          No se encontraron ventas registradas.
+            No se encontraron compras registradas.
         </div>
-      @endforelse
+    @endforelse
 
       </div>
     </div>

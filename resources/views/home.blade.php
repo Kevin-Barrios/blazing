@@ -8,7 +8,7 @@
         <div class="hero-content">
             <h1>Eleva tu estilo</h1>
             <p>Descubre lo último en moda y calzado exclusivo.</p>
-            <a href="#" class="btn-hero">Comprar ahora</a>
+            <a href="{{ route('login') }}" class="btn-hero">Comprar ahora</a>
         </div>
         <div class="hero-image">
             <img src="{{ asset('imagenes/banner2.jpg') }}" alt="Hero Image">

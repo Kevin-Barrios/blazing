@@ -100,6 +100,21 @@
       transition: left 0.3s ease;
     }
     footer .footer-logo img { height:30px; object-fit:contain; }
+
+    .table-orange {
+      background-color: #e67e22;
+      color: white;
+    }
+
+    .input-group .btn {
+      border-color: #e67e22;
+    }
+
+    .input-group .btn:hover {
+      background-color: #e67e22;
+      border-color: #e67e22;
+      color: white;
+    }
   </style>
 </head>
 <body>
@@ -130,6 +145,21 @@
   <main id="content" class="container">
     <h2 class="mb-4 fw-bold">Carrito de Compras</h2>
 
+    <!-- Mostrar alertas de sesión -->
+    @if(session('success'))
+      <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="bi bi-check-circle-fill"></i> {{ session('success') }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+      </div>
+    @endif
+
+    @if(session('error'))
+      <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-triangle-fill"></i> {{ session('error') }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+      </div>
+    @endif
+
     <div id="cart-container" class="bg-white p-4 rounded shadow-sm mb-4">
       <!-- Aquí se mostrarán los productos del carrito -->
     </div>
@@ -138,13 +168,14 @@
       <h3>Total: $<span id="total-price">0</span></h3>
 
       <!-- Formulario para finalizar compra -->
-  <form id="cart-form" action="{{ route('seleccionar-metodo.post') }}" method="POST">
-    @csrf
-    <input type="hidden" name="cart" id="cart-input">
-    <button type="submit" class="btn btn-success">Finalizar compra</button>
-</form>
+      <form id="cart-form" action="{{ route('seleccionar-metodo.post') }}" method="POST">
+        @csrf
+        <input type="hidden" name="cart" id="cart-input">
+        <button type="submit" class="btn btn-success" id="checkout-btn">Finalizar compra</button>
+      </form>
 
       <button class="btn btn-warning mt-2" onclick="generarPDF()">Descargar factura</button>
+      <button class="btn btn-outline-danger mt-2" onclick="clearCart()">Vaciar carrito</button>
     </div>
   </main>
 
@@ -172,17 +203,21 @@
     function loadCart() {
       const cartContainer = document.getElementById('cart-container');
       const totalPriceEl = document.getElementById('total-price');
+      const checkoutBtn = document.getElementById('checkout-btn');
       let cart = JSON.parse(localStorage.getItem('cart')) || [];
 
       if (cart.length === 0) {
-        cartContainer.innerHTML = '<p>El carrito está vacío.</p>';
+        cartContainer.innerHTML = '<p class="text-center text-muted">El carrito está vacío.</p>';
         totalPriceEl.textContent = '0';
+        checkoutBtn.disabled = true;
         return;
       }
 
+      checkoutBtn.disabled = false;
       let total = 0;
-      let html = '<table class="table">';
-      html += `<thead>
+      let html = '<div class="table-responsive">';
+      html += '<table class="table table-hover">';
+      html += `<thead class="table-orange">
         <tr>
           <th>Producto</th>
           <th>Talla</th>
@@ -199,46 +234,107 @@
         const subtotal = item.precio * item.quantity;
         total += subtotal;
         html += `<tr>
-          <td>${item.nombre}</td>
+          <td><strong>${item.nombre}</strong></td>
           <td>${item.talla || '-'}</td>
           <td>${item.color || '-'}</td>
           <td>$${item.precio.toLocaleString('es-CL')}</td>
           <td>
-            <input type="number" min="1" value="${item.quantity}" style="width: 60px;" onchange="updateQuantity(${index}, this.value)">
+            <div class="input-group" style="width: 120px;">
+              <button class="btn btn-outline-secondary btn-sm" type="button" onclick="decreaseQuantity(${index})">-</button>
+              <input type="number" min="1" value="${item.quantity}" class="form-control form-control-sm text-center" onchange="updateQuantity(${index}, this.value)">
+              <button class="btn btn-outline-secondary btn-sm" type="button" onclick="increaseQuantity(${index})">+</button>
+            </div>
           </td>
-          <td>$${subtotal.toLocaleString('es-CL')}</td>
-          <td><button class="btn btn-danger btn-sm" onclick="removeItem(${index})">Eliminar</button></td>
+          <td><strong>${subtotal.toLocaleString('es-CL')}</strong></td>
+          <td>
+            <button class="btn btn-danger btn-sm" onclick="removeItem(${index})" title="Eliminar producto">
+              <i class="bi bi-trash"></i>
+            </button>
+          </td>
         </tr>`;
       });
 
-      html += '</tbody></table>';
+      html += '</tbody></table></div>';
       cartContainer.innerHTML = html;
       totalPriceEl.textContent = total.toLocaleString('es-CL');
+    }
+
+    function increaseQuantity(index) {
+      let cart = JSON.parse(localStorage.getItem('cart')) || [];
+      if (cart[index]) {
+        cart[index].quantity += 1;
+        localStorage.setItem('cart', JSON.stringify(cart));
+        loadCart();
+      }
+    }
+
+    function decreaseQuantity(index) {
+      let cart = JSON.parse(localStorage.getItem('cart')) || [];
+      if (cart[index] && cart[index].quantity > 1) {
+        cart[index].quantity -= 1;
+        localStorage.setItem('cart', JSON.stringify(cart));
+        loadCart();
+      }
     }
 
     function updateQuantity(index, quantity) {
       quantity = parseInt(quantity);
       if (quantity < 1) quantity = 1;
       let cart = JSON.parse(localStorage.getItem('cart')) || [];
-      cart[index].quantity = quantity;
-      localStorage.setItem('cart', JSON.stringify(cart));
-      loadCart();
-    }
-
-    function removeItem(index) {
-      let cart = JSON.parse(localStorage.getItem('cart')) || [];
-      cart.splice(index, 1);
-      localStorage.setItem('cart', JSON.stringify(cart));
-      loadCart();
-    }
-
-    function clearCart() {
-      if (confirm('¿Estás seguro que quieres vaciar el carrito?')) {
-        localStorage.removeItem('cart');
+      if (cart[index]) {
+        cart[index].quantity = quantity;
+        localStorage.setItem('cart', JSON.stringify(cart));
         loadCart();
       }
     }
 
+    function removeItem(index) {
+      if (confirm('¿Estás seguro de que quieres eliminar este producto del carrito?')) {
+        let cart = JSON.parse(localStorage.getItem('cart')) || [];
+        cart.splice(index, 1);
+        localStorage.setItem('cart', JSON.stringify(cart));
+        loadCart();
+        
+        // Mostrar mensaje de confirmación
+        const alertDiv = document.createElement('div');
+        alertDiv.className = 'alert alert-info alert-dismissible fade show mt-3';
+        alertDiv.innerHTML = `
+          <i class="bi bi-info-circle"></i> Producto eliminado del carrito
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        document.querySelector('#content .container').insertBefore(alertDiv, document.getElementById('cart-container'));
+        
+        // Auto-eliminar la alerta después de 3 segundos
+        setTimeout(() => {
+          if (alertDiv.parentNode) {
+            alertDiv.remove();
+          }
+        }, 3000);
+      }
+    }
+
+    function clearCart() {
+      if (confirm('¿Estás seguro de que quieres vaciar todo el carrito?')) {
+        localStorage.removeItem('cart');
+        loadCart();
+        
+        // Mostrar mensaje de confirmación
+        const alertDiv = document.createElement('div');
+        alertDiv.className = 'alert alert-warning alert-dismissible fade show mt-3';
+        alertDiv.innerHTML = `
+          <i class="bi bi-exclamation-triangle"></i> Carrito vaciado completamente
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        document.querySelector('#content .container').insertBefore(alertDiv, document.getElementById('cart-container'));
+        
+        // Auto-eliminar la alerta después de 3 segundos
+        setTimeout(() => {
+          if (alertDiv.parentNode) {
+            alertDiv.remove();
+          }
+        }, 3000);
+      }
+    }
 
     function generarPDF() {
       let cart = JSON.parse(localStorage.getItem('cart')) || [];
@@ -257,39 +353,112 @@
       }
     }
 
-    document.getElementById('cart-form').addEventListener('submit', function(e){
-    const cart = JSON.parse(localStorage.getItem('cart')) || [];
-    if(cart.length === 0){
+    // Validar formulario antes de enviar
+    document.getElementById('cart-form').addEventListener('submit', function(e) {
+      const cart = JSON.parse(localStorage.getItem('cart')) || [];
+      if (cart.length === 0) {
         e.preventDefault();
-        alert('El carrito está vacío.');
-        return;
-    }
-    document.getElementById('cart-input').value = JSON.stringify(cart);
-});
+        alert('El carrito está vacío. Agrega productos antes de continuar.');
+        return false;
+      }
+      
+      // Actualizar el input hidden con los datos del carrito
+      document.getElementById('cart-input').value = JSON.stringify(cart);
+      
+      // Mostrar indicador de carga
+      const submitBtn = e.target.querySelector('button[type="submit"]');
+      const originalText = submitBtn.innerHTML;
+      submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Procesando...';
+      submitBtn.disabled = true;
+      
+      // Si hay algún error, restaurar el botón
+      setTimeout(() => {
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
+      }, 5000);
+    });
 
     function crearPDF(cart) {
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF();
-      doc.setFontSize(18);
-      doc.text('Factura - Blazing Store', 14, 22);
+      
+      // Configurar fuente y título
+      doc.setFontSize(20);
+      doc.setFont(undefined, 'bold');
+      doc.text('Factura - Blazing Store', 20, 25);
+      
+      // Información de la tienda
+      doc.setFontSize(10);
+      doc.setFont(undefined, 'normal');
+      doc.text('Blazing Store - Ropa personalizada', 20, 35);
+      doc.text('Fecha: ' + new Date().toLocaleDateString('es-ES'), 20, 42);
+      doc.text('═══════════════════════════════════════════', 20, 50);
+      
+      // Cabecera de productos
       doc.setFontSize(12);
-
-      let y = 30;
+      doc.setFont(undefined, 'bold');
+      doc.text('Productos:', 20, 60);
+      
+      let y = 70;
       let total = 0;
+      
+      doc.setFontSize(10);
+      doc.setFont(undefined, 'normal');
+      
       cart.forEach(item => {
         const subtotal = item.precio * item.quantity;
         total += subtotal;
-        doc.text(`${item.nombre} - Talla: ${item.talla || '-'} - Color: ${item.color || '-'} - Cantidad: ${item.quantity} - Subtotal: $${subtotal.toLocaleString('es-CL')}`, 14, y);
-        y += 10;
+        
+        doc.text(`• ${item.nombre}`, 25, y);
+        doc.text(`Talla: ${item.talla || '-'} | Color: ${item.color || '-'}`, 35, y + 7);
+        doc.text(`Cantidad: ${item.quantity} x ${item.precio.toLocaleString('es-CL')} = ${subtotal.toLocaleString('es-CL')}`, 35, y + 14);
+        
+        y += 25;
+        
+        // Si llegamos al final de la página, crear nueva página
+        if (y > 270) {
+          doc.addPage();
+          y = 20;
+        }
       });
-
-      doc.text(`Total: $${total.toLocaleString('es-CL')}`, 14, y + 10);
+      
+      // Total
+      y += 10;
+      doc.text('═══════════════════════════════════════════', 20, y);
+      doc.setFontSize(14);
+      doc.setFont(undefined, 'bold');
+      doc.text(`TOTAL: ${total.toLocaleString('es-CL')}`, 20, y + 15);
+      
+      // Pie de página
+      doc.setFontSize(8);
+      doc.setFont(undefined, 'normal');
+      doc.text('Gracias por su compra - Blazing Store', 20, y + 30);
+      
       doc.save('factura_blazing_store.pdf');
     }
 
-    document.addEventListener('DOMContentLoaded', loadCart);
+    // Cargar carrito al iniciar la página
+    document.addEventListener('DOMContentLoaded', function() {
+      loadCart();
+      
+      // Verificar si hay mensajes de sesión y mostrarlos
+      @if(session('success') || session('error'))
+        setTimeout(() => {
+          const alerts = document.querySelectorAll('.alert');
+          alerts.forEach(alert => {
+            if (alert.querySelector('.btn-close')) {
+              setTimeout(() => {
+                const bsAlert = new bootstrap.Alert(alert);
+                bsAlert.close();
+              }, 4000);
+            }
+          });
+        }, 100);
+      @endif
+    });
   </script>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
 </body>
 </html>

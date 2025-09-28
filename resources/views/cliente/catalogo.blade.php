@@ -336,6 +336,15 @@
       footer.classList.toggle('expanded');
     });
 
+    // Verificar si se debe limpiar el carrito después de una compra exitosa
+    document.addEventListener('DOMContentLoaded', function() {
+      @if(session('clear_cart'))
+        // Limpiar localStorage si la compra fue exitosa
+        localStorage.removeItem('cart');
+        console.log('Carrito limpiado después de compra exitosa');
+      @endif
+    });
+
     const products = @json($products);
     function addToCart(productId) {
       let cart = JSON.parse(localStorage.getItem('cart')) || [];

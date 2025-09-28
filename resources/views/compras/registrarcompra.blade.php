@@ -20,7 +20,7 @@
       padding: 20px;
       box-shadow: 0 4px 15px rgba(0,0,0,0.2);
       margin-top: 30px;
-    }
+    } 
 
     .navbar-custom {
       background-color: #6c757d;
@@ -30,7 +30,7 @@
       color: white;
     }
 
-    .btn-dashboard, .btn-crear, .btn-agregar {
+    .btn-dashboard, .btn-agregar {
       background-color: #6c757d;
       color: white;
       border: none;
@@ -38,7 +38,6 @@
     }
 
     .btn-dashboard:hover,
-    .btn-crear:hover,
     .btn-agregar:hover {
       background-color: #5a6268;
       color: white;
@@ -60,7 +59,6 @@
       background-color: #c82333;
       color: white;
     }
-
   </style>
 </head>
 <body>
@@ -98,21 +96,39 @@
       <form method="POST" action="{{ route('compras.store') }}">
         @csrf
 
+        <!-- Seleccionar Cliente -->
+        <div class="mb-3">
+          <label for="id_usuario" class="form-label">Cliente</label>
+          <select name="id_usuario" id="id_usuario" class="form-select" required>
+            <option value="">Seleccione un cliente</option>
+            @foreach ($usuarios as $usuario)
+              <option value="{{ $usuario->id_usuario }}">
+                {{ $usuario->nombre }} ({{ $usuario->correo }})
+              </option>
+            @endforeach
+          </select>
+        </div>
+
+        <hr>
+
+        <!-- Productos -->
         <div id="productos-container">
           <div class="row g-2 mb-3 producto-item">
             <div class="col-md-5">
-              <select name="productos[0][id_producto]" class="form-select" required>
+              <select name="productos[0][id_producto]" class="form-select producto-select" required>
                 <option value="">Seleccione un producto</option>
                 @foreach ($productos as $producto)
-                  <option value="{{ $producto->id_producto }}">{{ $producto->nombre }}</option>
+                  <option value="{{ $producto->id_producto }}" data-precio="{{ $producto->precio }}">
+                    {{ $producto->nombre }} - ${{ number_format($producto->precio, 0, ',', '.') }}
+                  </option>
                 @endforeach
               </select>
             </div>
             <div class="col-md-2">
-              <input type="number" name="productos[0][cantidad]" class="form-control" placeholder="Cantidad" required>
+              <input type="number" name="productos[0][cantidad]" class="form-control cantidad" placeholder="Cantidad" min="1" required>
             </div>
             <div class="col-md-3">
-              <input type="number" step="0.01" name="productos[0][precio_unitario]" class="form-control" placeholder="Precio Unitario" required>
+              <input type="number" step="0.01" name="productos[0][precio_unitario]" class="form-control precio-unitario" placeholder="Precio Unitario" readonly required>
             </div>
             <div class="col-md-2 text-center">
               <span class="remove-row">Borrar fila</span>
@@ -121,6 +137,16 @@
         </div>
 
         <button type="button" class="btn btn-agregar mb-3" id="add-producto">Agregar producto</button>
+
+        <hr>
+
+
+        <!-- Totales -->
+        <div class="mb-3">
+          <p><strong>Subtotal:</strong> $<span id="subtotal">0</span></p>
+          <p><strong>IVA:</strong> $<span id="iva">0</span></p>
+          <p><strong>Total:</strong> $<span id="total">0</span></p>
+        </div>
 
         <div class="text-end">
           <button type="submit" class="btn btn-dashboard">Registrar Compra</button>
@@ -138,32 +164,68 @@
       newRow.classList.add('row', 'g-2', 'mb-3', 'producto-item');
       newRow.innerHTML = `
         <div class="col-md-5">
-          <select name="productos[${index}][id_producto]" class="form-select" required>
+          <select name="productos[${index}][id_producto]" class="form-select producto-select" required>
             <option value="">Seleccione un producto</option>
             @foreach ($productos as $producto)
-              <option value="{{ $producto->id_producto }}">{{ $producto->nombre }}</option>
+              <option value="{{ $producto->id_producto }}" data-precio="{{ $producto->precio }}">
+                {{ $producto->nombre }} - ${{ number_format($producto->precio, 0, ',', '.') }}
+              </option>
             @endforeach
           </select>
         </div>
         <div class="col-md-2">
-          <input type="number" name="productos[${index}][cantidad]" class="form-control" placeholder="Cantidad" required>
+          <input type="number" name="productos[${index}][cantidad]" class="form-control cantidad" placeholder="Cantidad" min="1" required>
         </div>
         <div class="col-md-3">
-          <input type="number" step="0.01" name="productos[${index}][precio_unitario]" class="form-control" placeholder="Precio Unitario" required>
+          <input type="number" step="0.01" name="productos[${index}][precio_unitario]" class="form-control precio-unitario" placeholder="Precio Unitario" readonly required>
         </div>
         <div class="col-md-2 text-center">
-          <span class="remove-row">🗑️</span>
+          <span class="remove-row">Eliminar</span>
         </div>
       `;
       container.appendChild(newRow);
       index++;
     });
 
+    // Borrar fila
     document.addEventListener('click', function (e) {
       if (e.target.classList.contains('remove-row')) {
         e.target.closest('.producto-item').remove();
+        calcularTotales();
       }
     });
+
+    // Cambiar precio automáticamente al seleccionar producto
+    document.addEventListener('change', function (e) {
+      if (e.target.classList.contains('producto-select')) {
+        const precio = e.target.options[e.target.selectedIndex].dataset.precio;
+        const inputPrecio = e.target.closest('.producto-item').querySelector('.precio-unitario');
+        inputPrecio.value = precio ? precio : '';
+        calcularTotales();
+      }
+    });
+
+    // Recalcular al escribir cantidad
+    document.addEventListener('input', function (e) {
+      if (e.target.classList.contains('cantidad')) {
+        calcularTotales();
+      }
+    });
+
+    function calcularTotales() {
+      let subtotal = 0;
+      document.querySelectorAll('.producto-item').forEach(row => {
+        const cantidad = parseFloat(row.querySelector('.cantidad')?.value) || 0;
+        const precio = parseFloat(row.querySelector('.precio-unitario')?.value) || 0;
+        subtotal += cantidad * precio;
+      });
+      const iva = subtotal * 0.19;
+      const total = subtotal + iva;
+
+      document.getElementById('subtotal').textContent = subtotal.toFixed(2);
+      document.getElementById('iva').textContent = iva.toFixed(2);
+      document.getElementById('total').textContent = total.toFixed(2);
+    }
   </script>
 </body>
 </html>
