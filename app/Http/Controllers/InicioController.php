@@ -11,7 +11,6 @@ class InicioController extends Controller
     public function index()
     {
         $productosBD = Producto::where('activo', true)->get();
-
         $heroSlides = [
             (object)[
                 'imagen' => 'banner1.jpg',
